@@ -16,13 +16,12 @@ class GAT(nn.Module):
 
         self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
 
-    def forward(self, x, adj, modelType=0, Pvp=None):
+    def forward(self, x, adj, PvT):
         x = F.dropout(x, self.dropout, training=self.training)
         x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
-        if modelType == 1:
-            x = torch.spmm(Pvp, x)
+        x = torch.spmm(PvT, x)
         return F.log_softmax(x, dim=1)
 
 
@@ -46,13 +45,12 @@ class SpGAT(nn.Module):
                                              alpha=alpha, 
                                              concat=False)
 
-    def forward(self, x, adj, modelType=0, Pvp=None):
+    def forward(self, x, adj, PvT):
         x = F.dropout(x, self.dropout, training=self.training)
         x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
-        if modelType == 1:
-            x = torch.spmm(Pvp, x)
+        x = torch.spmm(PvT, x)
         return F.log_softmax(x, dim=1)
 
 class GCN(nn.Module):
@@ -64,7 +62,7 @@ class GCN(nn.Module):
         self.gc2 = GraphConvolution(nhid, nclass)
         self.dropout = dropout
 
-    def forward(self, x, adj, modelType=0, Pvp=None):
+    def forward(self, x, adj, PvT):
         x = F.relu(self.gc1(x, adj))
         x = F.dropout(x, self.dropout, training=self.training)
 
@@ -72,7 +70,6 @@ class GCN(nn.Module):
         # x = F.dropout(x, self.dropout, training=self.training)
 
         x = self.gc2(x, adj)
-        if modelType == 1:
-            x = torch.spmm(Pvp, x)
+        x = torch.spmm(PvT, x)
 
         return F.log_softmax(x, dim=1)
