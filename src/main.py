@@ -33,24 +33,6 @@ parser.add_argument('--dataset', type=str, default='cora',
                     help='Name of dataset')
 
 args = parser.parse_args()
-args.cuda = torch.cuda.is_available()
-
-np.random.seed(args.seed)
-torch.manual_seed(args.seed)
-if args.cuda:
-    torch.cuda.manual_seed(args.seed)
-
-# Load data
-adj, PvT, features, labels, idx_train, idx_val, idx_test = load_data(dataset=args.dataset)
-
-if args.cuda:
-    features = features.cuda()
-    adj = adj.cuda()
-    Pvp = PvT.cuda()
-    labels = labels.cuda()
-    idx_train = idx_train.cuda()
-    idx_val = idx_val.cuda()
-    idx_test = idx_test.cuda()
 
 def train(model, epoch):
     tic = time.time()
@@ -94,6 +76,16 @@ def test(model):
     return acc_test.item()
 
 
+args.cuda = torch.cuda.is_available()
+
+np.random.seed(args.seed)
+torch.manual_seed(args.seed)
+if args.cuda:
+    torch.cuda.manual_seed(args.seed)
+
+# Load data
+adj, PvT, features, labels, idx_train, idx_val, idx_test = load_data(dataset=args.dataset)
+    
 # model definition
 if args.modelType == 0:
     adj = sparse_mx_to_torch_sparse_tensor(adj)
@@ -113,9 +105,18 @@ elif args.modelType == 2:
                 nhid=args.hidden,
                 nclass=labels.max().item() + 1,
                 dropout=args.dropout)
-
+    
 if args.cuda:
+    features = features.cuda()
+    adj = adj.cuda()
+    Pvp = PvT.cuda()
+    labels = labels.cuda()
+    idx_train = idx_train.cuda()
+    idx_val = idx_val.cuda()
+    idx_test = idx_test.cuda()
     model.cuda()
+    
+    
 optimizer = optim.Adam(model.parameters(),
             lr=args.lr, weight_decay=args.weight_decay)
 
